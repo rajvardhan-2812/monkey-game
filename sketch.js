@@ -1,195 +1,114 @@
+
+var monkey , monkey_running;
+var banana ,bananaImage, obstacle, obstacleImage;
+var FoodGroup, obstacleGroup;
+var score;
+var ground;
+var rand,rand1;
+var bananaGroup,obstaclesGroup;
+var survivalTime=0;
+var score=0;
 var PLAY = 1;
 var END = 0;
-var gameState = PLAY;
-
-var trex, trex_running, trex_collided;
-var ground, invisibleGround, groundImage;
-
-var cloudsGroup, cloudImage;
-var obstaclesGroup, obstacle1, obstacle2, obstacle3, obstacle4, obstacle5, obstacle6;
-
-var score=0;
-
-var gameOver, restart;
-
-localStorage["HighestScore"] = 0;
+var GAMESTATE = PLAY;
 
 function preload(){
-  trex_running =   loadAnimation("trex1.png","trex3.png","trex4.png");
-  trex_collided = loadAnimation("trex_collided.png");
   
-  groundImage = loadImage("ground2.png");
   
-  cloudImage = loadImage("cloud.png");
+  monkey_running =            loadAnimation("sprite_0.png","sprite_1.png","sprite_2.png","sprite_3.png","sprite_4.png","sprite_5.png","sprite_6.png","sprite_7.png","sprite_8.png")
   
-  obstacle1 = loadImage("obstacle1.png");
-  obstacle2 = loadImage("obstacle2.png");
-  obstacle3 = loadImage("obstacle3.png");
-  obstacle4 = loadImage("obstacle4.png");
-  obstacle5 = loadImage("obstacle5.png");
-  obstacle6 = loadImage("obstacle6.png");
-  
-  gameOverImg = loadImage("gameOver.png");
-  restartImg = loadImage("restart.png");
+  bananaImage = loadImage("banana.png");
+  obstacleImage = loadImage("obstacle.png");
+ 
 }
+
+
 
 function setup() {
-  createCanvas(600, 200);
+  createCanvas(600,400)
+  ground = createSprite(300,360,1200,5)
+  monkey = createSprite(40,340,20,20)
+ monkey.addAnimation("running",monkey_running)
+   monkey.scale=0.1
   
-  trex = createSprite(50,180,20,50);
-  
-  trex.addAnimation("running", trex_running);
-  trex.addAnimation("collided", trex_collided);
-  trex.scale = 0.5;
-  
-  ground = createSprite(200,180,400,20);
-  ground.addImage("ground",groundImage);
-  ground.x = ground.width /2;
-  ground.velocityX = -(6 + 3*score/100);
-  
-  gameOver = createSprite(300,100);
-  gameOver.addImage(gameOverImg);
-  
-  restart = createSprite(300,140);
-  restart.addImage(restartImg);
-  
-  gameOver.scale = 0.5;
-  restart.scale = 0.5;
-
-  gameOver.visible = false;
-  restart.visible = false;
-  
-  invisibleGround = createSprite(200,190,400,10);
-  invisibleGround.visible = false;
-  
-  cloudsGroup = new Group();
-  obstaclesGroup = new Group();
-  
-  score = 0;
+  bananaGroup = new Group()
+  obstacleGroup = new Group()
 }
 
+
 function draw() {
-  //trex.debug = true;
-  background("lime");
-  text("Score: "+ score, 500,50);
-  
-  if (gameState===PLAY){
-    score = score + Math.round(getFrameRate()/60);
-    ground.velocityX = -(6 + 3*score/100);
-  
-    if(keyDown("space") && trex.y >= 1) {
-      trex.velocityY = -12;
+if(GAMESTATE===PLAY)
+  {
+  background("cyan");
+  if(keyDown("space")&& monkey.y>310)
+    {
+      monkey.velocityY=-12
     }
+  monkey.velocityY=monkey.velocityY+0.4
+  monkey.collide(ground)
   
-    trex.velocityY = trex.velocityY + 0.8
+  ground.velocityX=-7;
+    if(monkey.isTouching(bananaGroup))
+      {
+        bananaGroup.destroyEach();
+        score=score+1
+      }
+}
+  text("score="+score,20,100)
+      ground.x=ground.width/2
+    stroke("black")
+  textSize(20)
+  fill("black")
+  survivalTime=Math.ceil(frameCount/frameRate())
+  text("survival time"+survivalTime,300,50)
   
-    if (ground.x < 0){
-      ground.x = ground.width/2;
-    }
+  Banana();
   
-    trex.collide(invisibleGround);
-    spawnClouds();
-    spawnObstacles();
-  
-    if(obstaclesGroup.isTouching(trex)){
-        gameState = END;
-    }
-  }
-  else if (gameState === END) {
-    gameOver.visible = true;
-    restart.visible = true;
-    
-    //set velcity of each game object to 0
-    ground.velocityX = 0;
-    trex.velocityY = 0;
-    obstaclesGroup.setVelocityXEach(0);
-    cloudsGroup.setVelocityXEach(0);
-    
-    //change the trex animation
-    trex.changeAnimation("collided",trex_collided);
-    
-    //set lifetime of the game objects so that they are never destroyed
-    obstaclesGroup.setLifetimeEach(-1);
-    cloudsGroup.setLifetimeEach(-1);
-    
-    if(mousePressedOver(restart)) {
-      reset();
-    }
-  }
-  
+  Obstacles();
   
   drawSprites();
 }
-
-function spawnClouds() {
-  //write code here to spawn the clouds
-  if (frameCount % 60 === 0) {
-    var cloud = createSprite(600,120,40,10);
-    cloud.y = Math.round(random(80,120));
-    cloud.addImage(cloudImage);
-    cloud.scale = 0.5;
-    cloud.velocityX = -3;
-    
-     //assign lifetime to the variable
-    cloud.lifetime = 200;
-    
-    //adjust the depth
-    cloud.depth = trex.depth;
-    trex.depth = trex.depth + 1;
-    
-    //add each cloud to the group
-    cloudsGroup.add(cloud);
-  }
+function Banana()
+{
+  if(frameCount%80===0)
+    {
+  rand = Math.round(random(120,200));
+  banana = createSprite(390,rand,20,20);
   
-}
-
-function spawnObstacles() {
-  if(frameCount % 60 === 0) {
-    var obstacle = createSprite(600,165,10,40);
-    //obstacle.debug = true;
-    obstacle.velocityX = -(6 + 3*score/100);
+  banana.addImage("banana",bananaImage)
+  banana.velocityX=-4
+  banana.scale=0.1
     
-    //generate random obstacles
-    var rand = Math.round(random(1,6));
-    switch(rand) {
-      case 1: obstacle.addImage(obstacle1);
-              break;
-      case 2: obstacle.addImage(obstacle2);
-              break;
-      case 3: obstacle.addImage(obstacle3);
-              break;
-      case 4: obstacle.addImage(obstacle4);
-              break;
-      case 5: obstacle.addImage(obstacle5);
-              break;
-      case 6: obstacle.addImage(obstacle6);
-              break;
-      default: break;
+  banana.lifetime=100;
+    
+  bananaGroup.add(banana)
     }
-    
-    //assign scale and lifetime to the obstacle           
-    obstacle.scale = 0.5;
-    obstacle.lifetime = 300;
-    //add each obstacle to the group
-    obstaclesGroup.add(obstacle);
-  }
 }
 
-function reset(){
-  gameState = PLAY;
-  gameOver.visible = false;
-  restart.visible = false;
+
+function Obstacles()
+{
+  if(frameCount%300===0)
+    {
+ 
+  obstacle = createSprite(470,320,20,20);
   
-  obstaclesGroup.destroyEach();
-  cloudsGroup.destroyEach();
-  
-  trex.changeAnimation("running",trex_running);
-  
-  if(localStorage["HighestScore"]<score){
-    localStorage["HighestScore"] = score;
-  }
-  console.log(localStorage["HighestScore"]);
-  
-  score = 0;
-  
+  obstacle.addImage("rock",obstacleImage)
+  obstacle.velocityX=-4
+  obstacle.scale=0.2
+    
+  obstacle.lifetime=120;
+    
+  obstacleGroup.add(obstacle)
+    }
 }
+
+
+
+
+
+
+
+
+
+
